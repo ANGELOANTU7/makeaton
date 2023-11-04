@@ -171,8 +171,9 @@ class WeightedGraph:
             next_node = input("Enter the next node or 'done' if you have reached the destination: ").strip()
             if next_node == 'done':
                 break
-            if next_node in adjacent_nodes:  # Check if the next node is adjacent
+            if next_node in adjacent_nodes or next_node == current_node:  # Check if the next node is adjacent
                 print("Valid adjacent node.")
+                travelled_path.append(next_node)
                 new_route_and_distance = self.reroute_from_new_node(travelled_path, next_node, destination)
 
                 if new_route_and_distance:
