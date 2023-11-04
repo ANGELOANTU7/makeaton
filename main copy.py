@@ -13,7 +13,14 @@ class Node:
     def __init__(self, point):
         self.point = point
         self.neighbors = []
-
+        
+    def initialize_nodes(self):
+        nodes = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
+        for node in nodes:
+            new_node = Node(node)
+            self.points[point] = new_node
+            self.G.add_node(point)
+            
     def add_neighbor(self, neighbor, difficulty):
         self.neighbors.append((neighbor, difficulty))
 
