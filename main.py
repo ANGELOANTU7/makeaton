@@ -137,7 +137,6 @@ class WeightedGraph:
 
         with open(csv_file, mode='r') as file:
             csv_reader = csv.reader(file)
-            # next(csv_reader)  # Uncomment if CSV has a header row
             closest_time_diff = float('inf')
 
             for row in csv_reader:
@@ -161,33 +160,47 @@ class WeightedGraph:
             self.visualize_graph(highlight_path=chosen_path)
 
         # Current node checker and rerouter
-        travelled_path=[]
-        while True:
-            current_node = input("Enter the current node you are at or 'done' if you have reached the destination: ").strip()
-            travelled_path.append(current_node)
-            if current_node.lower() == 'done':
+        travelled_path = []
+        current_node = source  # Initialize the current node with the source
+        while current_node != 'done':
+            print(f"Current node: {current_node}")
+            # Display adjacent nodes to the current node
+            adjacent_nodes = [neighbor[0].point for neighbor in self.points[current_node].neighbors]
+            print(f"Adjacent nodes: {', '.join(adjacent_nodes)}")
+
+            next_node = input("Enter the next node or 'done' if you have reached the destination: ").strip()
+            if next_node == 'done':
                 break
-            if current_node not in chosen_path:
-                print("Current node is not on the chosen path, recalculating route...")
-                new_route_and_distance = self.reroute_from_new_node(travelled_path, current_node, destination)
+            if next_node in adjacent_nodes:  # Check if the next node is adjacent
+                print("Valid adjacent node.")
+                new_route_and_distance = self.reroute_from_new_node(travelled_path, next_node, destination)
 
                 if new_route_and_distance:
                     new_path, _ = new_route_and_distance  # Separate the path and distance
-                    # Check if new_path is not None and is a list
                     if new_path and isinstance(new_path, list):
-                        # No need to flatten as new_path should be a simple list based on reroute_from_new_node
                         print(f"New route: {' -> '.join(new_path)}")
                         self.visualize_graph(highlight_path=new_path)
                         chosen_path = new_path
                     else:
                         print("Received an invalid path from reroute_from_new_node.")
                         return None
+                else:
+                    print("Invalid path. Cannot reroute to the specified node.")
+
+            else:
+                print("Entered node is not adjacent to the current node. Please enter a valid adjacent node.")
+                continue  # Prompt for input again without changing the current node
+
+            current_node = next_node
 
         # Storing the final path to CSV after reaching the destination
-        if current_node.lower() == 'done':
+        if current_node == 'done':
             self.add_path_to_csv(csv_file, source, destination, time1, chosen_path)
             print("Final path details stored to CSV.")
             return chosen_path
+
+
+
 
 
 
