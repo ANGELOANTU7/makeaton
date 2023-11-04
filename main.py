@@ -1,11 +1,16 @@
-##team oregano
-
 import heapq
 import networkx as nx
 import matplotlib.pyplot as plt
+import csv
+import os
+import ast
+
+
+
+
 
 class Node:
-    def _init_(self, point):
+    def __init__(self, point):
         self.point = point
         self.neighbors = []
 
@@ -13,7 +18,7 @@ class Node:
         self.neighbors.append((neighbor, difficulty))
 
 class WeightedGraph:
-    def _init_(self):
+    def __init__(self):
         self.points = {}
         self.G = nx.Graph()
 
@@ -27,9 +32,13 @@ class WeightedGraph:
             self.add_point(source)
         if destination not in self.points:
             self.add_point(destination)
-        self.points[source].add_neighbor(self.points[destination], difficulty)
-        self.points[destination].add_neighbor(self.points[source], difficulty)
-        self.G.add_edge(source, destination, weight=difficulty)
+
+        if isinstance(difficulty, (int, float)):
+            self.points[source].add_neighbor(self.points[destination], difficulty)
+            self.points[destination].add_neighbor(self.points[source], difficulty)
+            self.G.add_edge(source, destination, weight=difficulty)
+        else:
+            print("Invalid difficulty level. Please enter a valid number.")
 
     def dijkstra(self, start):
         difficulties = {point: float('infinity') for point in self.points}
@@ -41,35 +50,27 @@ class WeightedGraph:
             current_difficulty, current_point = heapq.heappop(priority_queue)
             if current_difficulty > difficulties[current_point]:
                 continue
-            
+
             for neighbor, difficulty in self.points[current_point].neighbors:
                 path_difficulty = current_difficulty + difficulty
                 if path_difficulty < difficulties[neighbor.point]:
                     difficulties[neighbor.point] = path_difficulty
                     previous_points[neighbor.point] = current_point
                     heapq.heappush(priority_queue, (path_difficulty, neighbor.point))
-        
+
         return difficulties, previous_points
-    
+
     def reroute_from_new_node(self, traveled_path, new_current_node, end_node):
-        """
-        Finds a new path from the new current node to the end node and appends it to the traveled path.
-        """
-        # Find a new path from the new current node to the end node
         new_path = self.best_path(new_current_node, end_node)
         if new_path:
-            # Exclude the first node of the new path if it is the same as the last node of the traveled path
             if traveled_path[-1] == new_path[0]:
                 new_path = new_path[1:]
-            # Combine the traveled path with the new path
             combined_path = traveled_path + new_path
-            # Compute the total new distance by adding the traveled distance and the distance of the new path
             new_distance = self.find_shortest_distance(new_current_node, end_node)
             return combined_path, new_distance
         else:
-            return traveled_path, None  # Return the traveled path if no new path is found
+            return traveled_path, None
 
-    
     def best_path(self, start, end):
         difficulties, previous_points = self.dijkstra(start)
         path = []
@@ -104,59 +105,125 @@ class WeightedGraph:
         plt.axis('off')
         plt.show()
 
+    def add_path_to_csv(self, csv_file, source, destination, time, list):
+        header_exists = os.path.isfile(csv_file)
+        with open(csv_file, mode='a', newline='') as file:
+            csv_writer = csv.writer(file)
+            if not header_exists:
+                csv_writer.writerow(['Source', 'Destination', 'Time', 'Path'])
+            csv_writer.writerow([source, destination, time,list])
+
+    def load_data_from_csv(self, csv_file):
+        if not os.path.isfile(csv_file):
+            print("CSV file not found.")
+            return
+
+        with open(csv_file, mode='r') as file:
+            csv_reader = csv.reader(file)
+            next(csv_reader)  # Skip the header row
+            for row in csv_reader:
+                source, destination, time = row
+                if time.replace('.', '', 1).isdigit():
+                    time = float(time)
+                    self.add_path(source, destination, time)
+                else:
+                    print(f"Invalid time value in CSV: {time}")
+
+
+
+    def travel(self, source, destination, time1, csv_file):
+        closest_time = None
+        chosen_path = None
+
+        with open(csv_file, mode='r') as file:
+            csv_reader = csv.reader(file)
+            # next(csv_reader)  # Uncomment if CSV has a header row
+            closest_time_diff = float('inf')
+
+            for row in csv_reader:
+                s, d, t, path_str = row
+                if s == source and d == destination:
+                    time_diff = abs(float(t) - float(time1))
+                    if time_diff < closest_time_diff:
+                        closest_time_diff = time_diff
+                        closest_time = float(t)
+                        chosen_path = ast.literal_eval(path_str)
+
+        if chosen_path:
+            print(f"Chosen path: {chosen_path} with a time of: {closest_time}")
+            self.visualize_graph(highlight_path=chosen_path)
+        else:
+            print("No matching path found in CSV. Calculating best path...")
+            chosen_path = self.best_path(source, destination)
+            if not chosen_path:
+                print(f"No path found from {source} to {destination}.")
+                return None
+            self.visualize_graph(highlight_path=chosen_path)
+
+        # Current node checker and rerouter
+        travelled_path=[]
+        while True:
+            current_node = input("Enter the current node you are at or 'done' if you have reached the destination: ").strip()
+            travelled_path.append(current_node)
+            if current_node.lower() == 'done':
+                break
+            if current_node not in chosen_path:
+                print("Current node is not on the chosen path, recalculating route...")
+                new_route_and_distance = self.reroute_from_new_node(travelled_path, current_node, destination)
+
+                if new_route_and_distance:
+                    new_path, _ = new_route_and_distance  # Separate the path and distance
+                    # Check if new_path is not None and is a list
+                    if new_path and isinstance(new_path, list):
+                        # No need to flatten as new_path should be a simple list based on reroute_from_new_node
+                        print(f"New route: {' -> '.join(new_path)}")
+                        self.visualize_graph(highlight_path=new_path)
+                        chosen_path = new_path
+                    else:
+                        print("Received an invalid path from reroute_from_new_node.")
+                        return None
+
+        # Storing the final path to CSV after reaching the destination
+        if current_node.lower() == 'done':
+            self.add_path_to_csv(csv_file, source, destination, time1, chosen_path)
+            print("Final path details stored to CSV.")
+            return chosen_path
+
+
+
+
+graph = WeightedGraph()
 def get_user_input():
+    
+    csv_file = input("Enter the CSV file path: ")
     while True:
+        
         print("\nMenu:")
         print("1. Add a node")
         print("2. Add a path")
-        print("3. Find shortest path")
-        print("4. Visualize graph")
-        print("5. Exit")
-        choice = input("Enter your choice (1-5): ")
-        
+        print("4. Visualize grap1h")
+        print("7. Travel")
+        print("8. Exit")
+        choice = input("Enter your choice (1-8): ")
+
         if choice == "1":
             node = input("Enter the node label: ")
             graph.add_point(node)
             print(f"Node '{node}' added.")
-            
+
         elif choice == "2":
             src = input("Enter the source node: ")
             dest = input("Enter the destination node: ")
-            try:
-                difficulty = float(input("Enter the difficulty level: "))
+            difficulty = input("Enter the difficulty level: ")
+            if difficulty.replace('.', '', 1).isdigit():
+                difficulty = float(difficulty)
                 graph.add_path(src, dest, difficulty)
                 print(f"Path from '{src}' to '{dest}' with difficulty {difficulty} added.")
-            except ValueError:
-                print("Invalid difficulty level. Please enter a number.")
-        
-        
-        elif choice == "3":
-            start_node = input("Enter the start node: ")
-            end_node = input("Enter the end node: ")
-            shortest_path = graph.best_path(start_node, end_node)
-            if shortest_path:
-                print(f"Best Path from Node {start_node} to Node {end_node}: {' -> '.join(shortest_path)}")
-                shortest_distance = graph.find_shortest_distance(start_node, end_node)
-                print(f"Shortest Distance from Node {start_node} to Node {end_node}: {shortest_distance}")
+            else:
+                print("Invalid difficulty level. Please enter a valid number.")
 
-                graph.visualize_graph(shortest_path)  # Visualize the original shortest path.
+    
 
-                reroute = input("Do you need to reroute from a new current node? (yes/no): ").lower()
-                if reroute == 'yes':
-                    traveled_nodes = input("Enter the nodes you have traveled so far, separated by commas: ")
-                    traveled_path = [node.strip() for node in traveled_nodes.split(',')]
-                    new_current_node = traveled_path[-1]  # Last node is the current position
-
-                    new_path, new_distance = graph.reroute_from_new_node(traveled_path, new_current_node, end_node)
-                    if new_path:
-                        print(f"Combined Path including traveled and new path: {' -> '.join(new_path)}")
-                        if new_distance is not None:
-                            print(f"New Shortest Distance from Node {new_current_node} to Node {end_node}: {new_distance}")
-                        graph.visualize_graph(new_path)  # Visualize the new combined path.
-                    else:
-                        print("Unable to find a new path from your current location.")
-
-	        
         elif choice == "4":
             start_node = input("Enter the start node for path visualization (optional, press Enter to skip): ")
             end_node = input("Enter the end node for path visualization (optional, press Enter to skip): ")
@@ -164,16 +231,22 @@ def get_user_input():
                 graph.visualize_graph(graph.best_path(start_node, end_node))
             else:
                 graph.visualize_graph()
-                
-        elif choice == "5":
+
+
+
+        elif choice == "7":
+            source = input("Enter the source node: ")
+            destination = input("Enter the destination node: ")
+            most_frequent = input("Choose most frequent path (yes/no): ").lower()
+            time=input("time :")
+            most_frequent = most_frequent == 'yes'
+            graph.travel(source, destination,time, csv_file)
+
+        elif choice == "8":
             print("Exiting...")
             break
-            
+
         else:
             print("Invalid choice, please try again.")
 
-# Initialize the graph
-graph = WeightedGraph()
-
-# Start the user input loop
 get_user_input()
