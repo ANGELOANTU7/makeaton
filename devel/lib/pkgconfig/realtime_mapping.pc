@@ -1,0 +1,8 @@
+prefix=/home/tiger/catkin_ws/devel
+
+Name: realtime_mapping
+Description: Description of realtime_mapping
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

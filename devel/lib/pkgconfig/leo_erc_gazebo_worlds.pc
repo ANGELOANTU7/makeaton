@@ -1,0 +1,8 @@
+prefix=/home/tiger/catkin_ws/devel
+
+Name: leo_erc_gazebo_worlds
+Description: Description of leo_erc_gazebo_worlds
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

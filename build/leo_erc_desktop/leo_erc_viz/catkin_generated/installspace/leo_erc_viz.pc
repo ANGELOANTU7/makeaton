@@ -1,0 +1,8 @@
+prefix=/home/tiger/catkin_ws/install
+
+Name: leo_erc_viz
+Description: Description of leo_erc_viz
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

@@ -1,0 +1,8 @@
+prefix=/home/tiger/catkin_ws/install
+
+Name: mapping_pkg
+Description: Description of mapping_pkg
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

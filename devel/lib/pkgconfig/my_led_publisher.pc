@@ -1,0 +1,8 @@
+prefix=/home/tiger/catkin_ws/devel
+
+Name: my_led_publisher
+Description: Description of my_led_publisher
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
