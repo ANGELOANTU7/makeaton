@@ -19,6 +19,8 @@ The key concept of the Emergency Vehicle Management System is the implementation
 - **Path Prediction Algorithm**: Utilizes advanced algorithms to predict the ambulance's route based on historical data and real-time traffic conditions.
 
 - **Traffic Signal Override**: The virtual ambulance communicates with traffic signals along the predicted route to ensure they are in sync with the ambulance's path, allowing for a clear passage.
+## Simulation
+link to SUMO visual: https://drive.google.com/file/d/1z6Oewitzds_NI-zxpppx_w6qa0mYoobG/view?usp=sharing
 
 ## Technologies Used
 
