@@ -1,0 +1,11 @@
+<configuration>
+    <input>
+        <net-file value="C:\Users\sachu\OneDrive\Desktop\simulate\roads.net.xml"/>
+        <route-files value="C:\Users\sachu\OneDrive\Desktop\simulate\output_trips.xml"/>
+    </input>
+    <time>
+        <begin value="0"/>
+        <end value="300"/>
+	<step-length value="0.4"/>
+    </time>
+</configuration>
